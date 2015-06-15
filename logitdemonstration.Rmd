@@ -1,0 +1,90 @@
+---
+title: "Linear, Logit, Probit comparison"
+output: html_document
+---
+
+
+```{r echo = FALSE, results='hide', include = FALSE}
+library(ggplot2)
+library(gridExtra)
+```
+
+```{r echo = FALSE}
+makeXY <- function(m, sd) {
+  x <- rnorm(1000, 0, 1)
+  y = ifelse(x>rnorm(n =1000 , mean = m, sd = sd), 1, 0) 
+  ret <- list()
+  ret$x <- x
+  ret$y <- y
+  ret
+}
+
+plotscatter <- function(x, y) {
+  ggplot(data.frame(response = y, independent = x)) + 
+  geom_point(aes(y = response, x = independent), alpha = 0.5) + theme_bw()  
+}
+
+plotpredictions <- function(x, y) {
+  lin <- glm(y~x)
+  log <- glm(y~x, family=binomial(link="logit"))
+  prob <- glm(y~x, family=binomial(link="probit"))
+  
+  ggplot(data.frame(
+    x = x, lin = predict(object = lin), 
+    log = predict(object = log, type="response"), 
+    prob = predict(object = prob, type="response")
+    )) + 
+    geom_point(aes(x = x, y = lin), color = "red", alpha = .3) + 
+    geom_point(aes(x = x, y = log), color = "blue", alpha = .3) + 
+    geom_point(aes(x = x, y = prob), color = "green", alpha = .3) +
+    theme_bw() + 
+    xlab("independent") +
+    xlim(c(-3,3)) +
+    ylab("predictions")
+  }
+```
+
+```{r echo = FALSE}
+low_separation <- makeXY(0, 2)
+plotscatter(low_separation$x, low_separation$y)
+```
+
+```{r echo = FALSE}
+plotpredictions(low_separation$x, low_separation$y)
+```
+
+```{r echo = FALSE}
+high_separation <- makeXY(0, .7)
+plotscatter(high_separation$x, high_separation$y)
+```
+
+```{r echo = FALSE}
+plotpredictions(high_separation$x, high_separation$y)
+```
+
+```{r echo = FALSE}
+skewed_probability <- makeXY(1, 2)
+plotscatter(skewed_probability$x, skewed_probability$y)
+```
+
+```{r echo = FALSE}
+plotpredictions(skewed_probability$x, skewed_probability$y)
+```
+
+```{r echo = FALSE, results = FALSE, include=FALSE}
+d1 <- makeXY(0, 2)
+d2 <- makeXY(1, 2)
+d3 <- makeXY(2, 2)
+d4 <- makeXY(0, .7)
+d5 <- makeXY(1, .7)
+d6 <- makeXY(2, .7)
+p1 <- plotpredictions(d1$x, d1$y)
+p2 <- plotpredictions(d2$x, d2$y)
+p3 <- plotpredictions(d3$x, d3$y)
+p4 <- plotpredictions(d4$x, d4$y)
+p5 <- plotpredictions(d5$x, d5$y)
+p6 <- plotpredictions(d6$x, d6$y)
+```
+```{r echo = FALSE, fig.height= 8, fig.width=10, results = FALSE}
+grid.arrange(p1, p4, p2, p5, p3, p6, main = "Impacts of Separability and Skewness")
+```
